@@ -4,13 +4,19 @@ import './texas-map-app.css';
 import Tabletop from 'tabletop';
 import MarkerClusterer from '@google/markerclusterer';
 
+var markers =[];
+
 class Map extends React.Component {
 
   constructor(props) {
     super(props)
     this.state = {
+      fetchedData: false,
+      fetchedMarkers: false,
       fetchedMap: false,
       data: [],
+      map: null, 
+      clusterer: null,
     }
   }
 
@@ -55,40 +61,70 @@ class Map extends React.Component {
       callback: googleData => {
         console.log('google sheet data --->', googleData)
         this.setState({ data: googleData });
+        this.setState({ fetchedData: true });
       },
       simpleSheet: true
     });
   }
 
   componentDidUpdate() {
-    const { fetchedMap, data } = this.state;
-    if(!fetchedMap && data.length) {
+    const { fetchedData, fetchedMarkers, fetchedMap, data, map, clusterer } = this.state;
+    console.log('Update - Data', data);
+    console.log('Update - Markers', markers);
+    if(!fetchedMarkers && data.length) {
       this.getMapClusterer();
-    }  
+    } else if (!fetchedMap && markers.length) {
+      console.log('Markers',markers);
+      this.getMapClusterer();
+    }
   }
 
+  getMapMarkers() {
+    var { fetchedData, fetchedMarkers, fetchedMap, data, map, clusterer } = this.state;
+    console.log('Data to markers', data);
+    const google = window.google;
+    const geocoder = new google.maps.Geocoder()
+    data.slice(1).map( row => {
+      geocoder.geocode( { 'address': row.City}, function (results, status) {
+        console.log('City', row.City);
+        if (status == 'OK') {
+          var marker = new google.maps.Marker({
+            position: results[0].geometry.location,
+            label: row.City
+          });
+          markers.push(marker);
+          console.log('Markers', markers);
+        }
+      });
+    });
+    console.log('fetchedMarkers', true);
+    this.setState({ fetchedMarkers: true });
+    console.log('Final Markers', markers);
+  }
+
+
   getMapClusterer() {
-    var { fetchedMap, data } = this.state;
+    var { fetchedData, fetchedMarkers, fetchedMap, data, map, clusterer } = this.state;
+    this.setState({ fetchedMap: true });
     this.getGoogleMaps().then((google) => {
-
       var location = {lat: 30.2672, lng:-97.7431};
-
       var mapOptions = {
         zoom: 5, 
         center: location
       };
-
       const map = new google.maps.Map(document.getElementById('map'), mapOptions);
+      console.log('Map', map);
+      //this.setState({ map: map });
 
-      var markers = [];
       const markerClusterer = new MarkerClusterer(map, markers, {
-       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-       gridSize: 30
+       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
       });
+      console.log('MarkerClusterer', markerClusterer);
+      //this.setState({ clusterer: markerClusterer });
 
+      console.log('Data to markers', data);
       const geocoder = new google.maps.Geocoder()
-
-      data.map( row => {
+      data.slice(1).map( row => {
         geocoder.geocode( { 'address': row.City}, function (results, status) {
           console.log('City', row.City);
           if (status == 'OK') {
@@ -101,15 +137,12 @@ class Map extends React.Component {
           }
         });
       });
-
     });
-
-    this.setState({ fetchedMap: true });
-
+    this.setState({ fetchedMarkers: true });
   }
 
   render () {
-    const { fetchedMap, data } = this.state;
+    const { data, map, clusterer } = this.state;
     return (
       <div id="map-container">
         <h3>My Google Maps Demo</h3>
