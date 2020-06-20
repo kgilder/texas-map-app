@@ -86,46 +86,119 @@ class Map extends React.Component {
 
       const map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
-      var markers = [];
+      var county_markers = [];
+      var state_markers = [];
+      var federal_markers = [];
+
+      var color;
+      var county_re = new RegExp("County");
+      var state_re = new RegExp("State");
+      var fed_re = new RegExp("Federal");
 
       data.map( row => {
         var geometry = row.Geolocation.split(",");
         const location = {lat: parseFloat(geometry[0]),lng: parseFloat(geometry[1])}
         //console.log('City location', row.Facility, row.City, row.County, location);
+        if(county_re.test(row.FacilityType)) {
+          color = '#0B5D93';
+        } else if (state_re.test(row.FacilityType)) {
+          color = '#634562';
+        } else if (fed_re.test(row.FacilityType)) {
+          color = '#CE2727';
+        } else {
+          color = '#0B5D93';
+        }
         var marker = new google.maps.Marker({
           position: location,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
             scale: 8,
-            fillColor: '#0B5D93',
+            fillColor: color,
             fillOpacity: 1,
-            strokeColor: '#0B5D93',
+            strokeColor: color,
             strokeOpacity: 1,
           },
-          //label: row.Facility
+          label: {
+            color: '#FFF',
+            fontWeight: 'bold',
+            fontSize: '15px',
+            text: '1'
+          }
         });
         //markerClusterer.addMarker(marker);
-        markers.push(marker);
+        if(county_re.test(row.FacilityType)) {
+          county_markers.push(marker);
+        } else if (state_re.test(row.FacilityType)) {
+          state_markers.push(marker);
+        } else if (fed_re.test(row.FacilityType)) {
+          federal_markers.push(marker);
+        } else {
+          //markers.push(marker);
+        }
         //console.log('MarkerClusterer', markerClusterer);
       });
-      const markerClusterer = new MarkerClusterer(map, markers, {
+      const countyClusterer = new MarkerClusterer(map, county_markers, {
         //imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
         gridSize: 30,
         styles: [
           {
             width: 30,
             height: 30,
-            className: 'custom-clustericon-1'
+            className: 'custom-clustericon-county'
           },
+          {
+            width: 35,
+            height: 35,
+            className: 'custom-clustericon-county'
+          },
+          {
+            width: 40,
+            height: 40,
+            className: 'custom-clustericon-county'
+          }
+        ],
+        clusterClass: 'custom-clustericon'
+      });
+      const stateClusterer = new MarkerClusterer(map, state_markers, {
+        //imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+        gridSize: 30,
+        styles: [
           {
             width: 30,
             height: 30,
-            className: 'custom-clustericon-2'
+            className: 'custom-clustericon-state'
           },
+          {
+            width: 35,
+            height: 35,
+            className: 'custom-clustericon-state'
+          },
+          {
+            width: 40,
+            height: 40,
+            className: 'custom-clustericon-state'
+          }
+        ],
+        clusterClass: 'custom-clustericon'
+      });
+      const federalClusterer = new MarkerClusterer(map, federal_markers, {
+        //imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+        gridSize: 30,
+        styles: [
           {
             width: 30,
             height: 30,
-            className: 'custom-clustericon-3'
+            className: 'custom-clustericon-federal'
+          },
+          {
+            width: 35,
+            height: 35,
+            className: 'custom-clustericon-federal'
+          },
+          {
+            width: 40,
+            height: 40,
+            className: 'custom-clustericon-federal'
           }
         ],
         clusterClass: 'custom-clustericon'
