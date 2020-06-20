@@ -2,7 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import './texas-map-app.css';
 import Tabletop from 'tabletop';
-import MarkerClusterer from '@google/markerclusterer';
+import MarkerClusterer from '@google/markerclustererplus';
+
+// Custom clustericon class
+//
+//
 
 class Map extends React.Component {
 
@@ -35,7 +39,8 @@ class Map extends React.Component {
         script.async = true;
         document.body.appendChild(script);
         //script.src = `https://cdn.rawgit.com/googlemaps/js-marker-clusterer/gh-pages/src/markerclusterer.js`;
-        script.src = "https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js";
+        //script.src = "https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js";
+        script.src = "https://googlemaps.github.io/v3-utility-library/packages/markerclustererplus/dist/markerclustererplus.min.js";
         script.async = true; 
         document.body.appendChild(script);
       });
@@ -52,6 +57,7 @@ class Map extends React.Component {
   componentDidMount() {
     Tabletop.init({
       key: '1-Efe9kHJNuxvoO4pz23ioAE3D_dbugnedqnahVuBMkk',
+      //key: '1mOS1wggvyRUOpI-u2VabmnQ1yJPPEgOc2zdZjWxbAwQ',
       callback: googleData => {
         console.log('google sheet data --->', googleData)
         this.setState({ data: googleData });
@@ -81,31 +87,52 @@ class Map extends React.Component {
       const map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
       var markers = [];
-      const markerClusterer = new MarkerClusterer(map, markers, {
-       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-       gridSize: 30
-      });
-
-      const geocoder = new google.maps.Geocoder()
 
       data.map( row => {
-        geocoder.geocode( { 'address': row.City}, function (results, status) {
-          console.log('City', row.City);
-          if (status == 'OK') {
-            var marker = new google.maps.Marker({
-              position: results[0].geometry.location,
-              label: row.City
-            });
-            markerClusterer.addMarker(marker);
-            console.log('MarkerClusterer', markerClusterer);
-          }
+        var geometry = row.Geolocation.split(",");
+        const location = {lat: parseFloat(geometry[0]),lng: parseFloat(geometry[1])}
+        //console.log('City location', row.Facility, row.City, row.County, location);
+        var marker = new google.maps.Marker({
+          position: location,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#0B5D93',
+            fillOpacity: 1,
+            strokeColor: '#0B5D93',
+            strokeOpacity: 1,
+          },
+          //label: row.Facility
         });
+        //markerClusterer.addMarker(marker);
+        markers.push(marker);
+        //console.log('MarkerClusterer', markerClusterer);
+      });
+      const markerClusterer = new MarkerClusterer(map, markers, {
+        //imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+        gridSize: 30,
+        styles: [
+          {
+            width: 30,
+            height: 30,
+            className: 'custom-clustericon-1'
+          },
+          {
+            width: 30,
+            height: 30,
+            className: 'custom-clustericon-2'
+          },
+          {
+            width: 30,
+            height: 30,
+            className: 'custom-clustericon-3'
+          }
+        ],
+        clusterClass: 'custom-clustericon'
       });
 
     });
-
     this.setState({ fetchedMap: true });
-
   }
 
   render () {
