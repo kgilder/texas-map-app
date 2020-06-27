@@ -13,8 +13,13 @@ class Map extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      map: null,
+      firstClusterer: null,
+      secondClusterer: null, 
+      thirdClusterer: null,
       fetchedMap: false,
       data: [],
+      selectUpdate: true,
       selectedOption: props.value || 'all',
     }
   }
@@ -56,24 +61,12 @@ class Map extends React.Component {
   componentDidMount() {
     Tabletop.init({
       key: '1-Efe9kHJNuxvoO4pz23ioAE3D_dbugnedqnahVuBMkk',
-      //key: '1mOS1wggvyRUOpI-u2VabmnQ1yJPPEgOc2zdZjWxbAwQ',
       callback: googleData => {
-        console.log('google sheet data --->', googleData)
         this.setState({ data: googleData });
       },
       simpleSheet: true
     });
-  }
 
-  componentDidUpdate() {
-    const { fetchedMap, data, selectedOption } = this.state;
-    if(!fetchedMap && data.length) {
-      this.getMapClusterer();
-    }  
-  }
-
-  getMapClusterer() {
-    var { fetchedMap, data, selectedOption } = this.state;
     this.getGoogleMaps().then((google) => {
 
       var location = {lat: 30.2672, lng:-97.7431};
@@ -319,21 +312,104 @@ class Map extends React.Component {
         }
       };
 
-      const map = new google.maps.Map(document.getElementById('map'), mapOptions);
-
+      var map = new google.maps.Map(document.getElementById('map'), mapOptions);
       map.mapTypes.set('tji_map', styledMapType);
       map.setMapTypeId('tji_map');
 
-      var markers = [];
-      var county_markers = [];
-      var state_markers = [];
-      var federal_markers = [];
-      var young_markers = [];
-      var middle_age_markers = [];
-      var elderly_markers = [];
-      var white_markers = [];
-      var black_markers = [];
-      var hispanic_markers = [];
+      const county_style = {
+        gridSize: 30,
+        styles: [
+          {
+            width: 30,
+            height: 30,
+            className: 'custom-clustericon-county'
+          },
+          {
+            width: 35,
+            height: 35,
+            className: 'custom-clustericon-county'
+          },
+          {
+            width: 40,
+            height: 40,
+            className: 'custom-clustericon-county'
+          }
+        ],
+        clusterClass: 'custom-clustericon'
+      };
+
+      const state_style = {
+        gridSize: 30,
+        styles: [
+          {
+            width: 30,
+            height: 30,
+            className: 'custom-clustericon-state'
+          },
+          {
+            width: 35,
+            height: 35,
+            className: 'custom-clustericon-state'
+          },
+          {
+            width: 40,
+            height: 40,
+            className: 'custom-clustericon-state'
+          }
+        ],
+        clusterClass: 'custom-clustericon'
+      };
+
+      const federal_style = {
+        gridSize: 30,
+        styles: [
+          {
+            width: 30,
+            height: 30,
+            className: 'custom-clustericon-federal'
+          },
+          {
+            width: 35,
+            height: 35,
+            className: 'custom-clustericon-federal'
+          },
+          {
+            width: 40,
+            height: 40,
+            className: 'custom-clustericon-federal'
+          }
+        ],
+        clusterClass: 'custom-clustericon'
+      };
+
+      var firstClusterer = new MarkerClusterer(map, [], county_style);
+      var secondClusterer = new MarkerClusterer(map, [], state_style);      
+      var thirdClusterer = new MarkerClusterer(map, [], federal_style);
+
+      this.setState({ map: map,
+                      firstClusterer: firstClusterer, 
+                      secondClusterer: secondClusterer, 
+                      thirdClusterer: thirdClusterer,
+                      fetchedMap: true,
+                    });
+    });
+  }
+
+  componentDidUpdate() {
+    const { map, firstClusterer, secondClusterer, thirdClusterer, fetchedMap, data, selectedOption, selectUpdate } = this.state;
+    if(fetchedMap && data.length && selectUpdate) {
+      this.getMapClusterer();
+      this.setState({ selectUpdate: false });
+    }  
+  }
+
+  getMapClusterer() {
+    var { map, firstClusterer, secondClusterer, thirdClusterer, fetchedMap, data, selectedOption, selectUpdate } = this.state;
+    this.getGoogleMaps().then((google) => {
+
+      firstClusterer.clearMarkers();
+      secondClusterer.clearMarkers(); 
+      thirdClusterer.clearMarkers(); 
 
       var color;
       var county_re = new RegExp("County");
@@ -345,8 +421,10 @@ class Map extends React.Component {
       var other_re = new RegExp("Other\|unknown");
       const blue = '#0B5D93';
       const purple = '#634562';
-      const red = '#CE2727'
-
+      const red = '#CE2727';
+      var firstMarkers = [];
+      var secondMarkers = [];
+      var thirdMarkers = []; 
 
       //Create InfoWindows for each facility
       var infoHash = {};
@@ -354,7 +432,6 @@ class Map extends React.Component {
       data.map( row => {
         var geometry = row.Geolocation.split(",");
         const location = {lat: parseFloat(geometry[0]),lng: parseFloat(geometry[1])}
-        //console.log('City location', row.Facility, row.City, row.County, location);
         if(selectedOption === "all") {
           color = blue;
         } else if(selectedOption === "facility") {
@@ -416,260 +493,46 @@ class Map extends React.Component {
             county: row.County
           }
         });
-        if(county_re.test(row.FacilityType)) {
-          county_markers.push(marker);
-        } else if (state_re.test(row.FacilityType)) {
-          state_markers.push(marker);
-        } else if (fed_re.test(row.FacilityType)) {
-          federal_markers.push(marker);
-        } else {
-          //markers.push(marker);
-        }
+
         if(selectedOption === "all") {
-          markers.push(marker); 
+          firstMarkers.push(marker); 
         } else if(selectedOption === "facility") {
           if(county_re.test(row.FacilityType)) {
-            county_markers.push(marker);
+            firstMarkers.push(marker);
           } else if (state_re.test(row.FacilityType)) {
-          state_markers.push(marker);
+            secondMarkers.push(marker);
           } else if (fed_re.test(row.FacilityType)) {
-          federal_markers.push(marker);
+            thirdMarkers.push(marker);
           }
         } else if(selectedOption === "age") {
           if(parseInt(row.Age) < 35) {
-            young_markers.push(marker);
+            firstMarkers.push(marker);
           } else if(64 < parseInt(row.Age)) {
-            elderly_markers.push(marker);
+            thirdMarkers.push(marker);
           } else {
-            middle_age_markers.push(marker); 
+            secondMarkers.push(marker); 
           }
         } else if(selectedOption === "ethnicity"){
           if(white_re.test(row.Race)) {
-            white_markers.push(marker);
+            firstMarkers.push(marker);
           } else if (black_re.test(row.Race)) {
-            black_markers.push(marker);
+            secondMarkers.push(marker);
           } else if (hispanic_re.test(row.Race)) {
-            hispanic_markers.push(marker); 
+            thirdMarkers.push(marker); 
           }
-        } else {
-          markers.push(marker); 
-        }
+        }       
+
       });
-      if(selectedOption === "all") {
-      const markerClusterer = new MarkerClusterer(map, markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-county'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      } else if(selectedOption === "ethnicity") {
-      const whiteClusterer = new MarkerClusterer(map, white_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-county'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      const blackClusterer = new MarkerClusterer(map, black_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-state'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-state'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-state'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      const hispanicClusterer = new MarkerClusterer(map, hispanic_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-federal'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-federal'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-federal'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      } else if(selectedOption === "age") {
-      const youngClusterer = new MarkerClusterer(map, young_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-county'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      const middle_ageClusterer = new MarkerClusterer(map, middle_age_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-state'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-state'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-state'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      const elderlyClusterer = new MarkerClusterer(map, elderly_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-federal'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-federal'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-federal'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      } else if(selectedOption === "facility") {
-      const countyClusterer = new MarkerClusterer(map, county_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-county'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-county'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      const stateClusterer = new MarkerClusterer(map, state_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-state'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-state'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-state'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      const federalClusterer = new MarkerClusterer(map, federal_markers, {
-        gridSize: 30,
-        styles: [
-          {
-            width: 30,
-            height: 30,
-            className: 'custom-clustericon-federal'
-          },
-          {
-            width: 35,
-            height: 35,
-            className: 'custom-clustericon-federal'
-          },
-          {
-            width: 40,
-            height: 40,
-            className: 'custom-clustericon-federal'
-          }
-        ],
-        clusterClass: 'custom-clustericon'
-      });
-      }
+
+      firstClusterer.addMarkers(firstMarkers, false); 
+      secondClusterer.addMarkers(secondMarkers, false); 
+      thirdClusterer.addMarkers(thirdMarkers, false); 
+      this.setState({ map: map, 
+                      firstClusterer: firstClusterer, 
+                      secondClusterer: secondClusterer, 
+                      thirdClusterer: thirdClusterer,  
+                      selectUpdate: false
+                    });
 
 //      map.addListener(countyClusterer, 'clusterclick', function(cluster) {
 //        const markers = cluster.getMarkers();
@@ -692,16 +555,16 @@ class Map extends React.Component {
 //        infowindow.open(map);
 //      });
     });
-    this.setState({ fetchedMap: true });
   }
 
   handleOptionChange(event) {
-    this.setState({fetchedMap: false });
-    this.setState({selectedOption: event.target.value});
+    this.setState({ selectedOption: event.target.value,
+                    selectUpdate: true
+                  });
   }
 
   render () {
-    const { fetchedMap, data } = this.state;
+    const { map, firstClusterer, secondClusterer, thirdClusterer, fetchedMap, data } = this.state;
     return (
       <div id="map-container">
         <h3>My Google Maps Demo</h3>
