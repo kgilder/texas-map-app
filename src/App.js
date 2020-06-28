@@ -62,6 +62,7 @@ class Map extends React.Component {
   }
 
   componentDidMount() {
+    console.log("componentDidMount");
     Tabletop.init({
       key: '1-Efe9kHJNuxvoO4pz23ioAE3D_dbugnedqnahVuBMkk',
       callback: googleData => {
@@ -400,6 +401,7 @@ class Map extends React.Component {
 
   componentDidUpdate() {
     const { map, firstClusterer, secondClusterer, thirdClusterer, fetchedMap, data, selectedOption, selectUpdate } = this.state;
+    console.log("componentDidUpdate", fetchedMap, selectUpdate);
     if(fetchedMap && data.length && selectUpdate) {
       this.getMapClusterer();
       this.setState({ selectUpdate: false });
@@ -408,6 +410,7 @@ class Map extends React.Component {
 
   getMapClusterer() {
     var { map, firstClusterer, secondClusterer, thirdClusterer, fetchedMap, data, selectedOption, selectUpdate } = this.state;
+    console.log("getMapClusterer", map, firstClusterer, secondClusterer, thirdClusterer);
     this.getGoogleMaps().then((google) => {
 
       firstClusterer.clearMarkers();
