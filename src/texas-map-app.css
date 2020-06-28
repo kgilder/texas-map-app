@@ -12,6 +12,7 @@
         font-size: 15px;
         display: flex;
         align-items: center;
+        opacity: 80%;
 }
 
 .custom-clustericon-county {
@@ -25,3 +26,63 @@
 .custom-clustericon-federal {
   --cluster-color: #CE2727;
 }
+
+.form {
+  width: 50%;
+  float: left; 
+}
+
+.legend {
+  width: 50%; 
+  float: right;
+}
+
+.legend_item {
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.legend-text {
+  width: 90%;
+  height: 20px;
+  float: left;
+  text-align: right;
+}
+
+.icon {
+  width: 10%;
+  height: 20px;
+  float: right;
+  display: inline-block;
+}
+
+.legend-icon-county {
+  background-color: #0B5D93;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: block;
+  float: left;
+  margin-left: 5px;
+}
+
+.legend-icon-state {
+  background-color: #634562;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: block;
+  float: left;
+  margin-left: 5px;
+}
+
+.legend-icon-federal {
+  background-color: #CE2727;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: block;
+  float: left;
+  margin-left: 5px;
+}
+

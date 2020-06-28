@@ -36,3 +36,13 @@
     transform: rotate(360deg);
   }
 }
+
+.form {
+  width: 50%;
+  float: left; 
+}
+
+.legend {
+  width: 50%; 
+  float: right;
+}

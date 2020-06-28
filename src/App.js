@@ -21,6 +21,9 @@ class Map extends React.Component {
       data: [],
       selectUpdate: true,
       selectedOption: props.value || 'all',
+      firstLegendText: 'Deaths',
+      secondLegendText: '',
+      thirdLegendText: ''
     }
   }
 
@@ -471,11 +474,12 @@ class Map extends React.Component {
           position: location,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
+            scale: 10,
             fillColor: color,
-            fillOpacity: 1,
+            fillOpacity: 0.8,
             strokeColor: color,
             strokeOpacity: 1,
+            strokeWeight: 0,
           },
           label: {
             color: '#FFF',
@@ -558,17 +562,37 @@ class Map extends React.Component {
   }
 
   handleOptionChange(event) {
-    this.setState({ selectedOption: event.target.value,
-                    selectUpdate: true
+    var selectedOption = event.target.value; 
+    if(selectedOption == 'all'){
+      var firstLegendText = "Deaths";
+    } else if(selectedOption == 'facility') {
+      var firstLegendText = "County Facilities Deaths";
+      var secondLegendText = "State Facility Deaths";
+      var thirdLegendText = "Federal Facility Deaths";
+    } else if(selectedOption == 'age') {
+      var firstLegendText = "Deaths, Ages Under 35";
+      var secondLegendText = "Deaths, Ages 35-65";
+      var thirdLegendText = "Deaths, Ages over 65";
+    } else if(selectedOption == 'ethnicity') {
+      var firstLegendText = "White Deaths";
+      var secondLegendText = "Black Deaths";
+      var thirdLegendText = "Hispanic Deaths";
+    }
+    this.setState({ selectedOption: selectedOption,
+                    selectUpdate: true,
+                    firstLegendText: firstLegendText,
+                    secondLegendText: secondLegendText,
+                    thirdLegendText: thirdLegendText
                   });
   }
 
   render () {
-    const { map, firstClusterer, secondClusterer, thirdClusterer, fetchedMap, data } = this.state;
+    const { map, firstClusterer, secondClusterer, thirdClusterer, fetchedMap, data, selectedOption, firstLegendText, secondLegendText, thirdLegendText } = this.state;
     return (
       <div id="map-container">
         <h3>My Google Maps Demo</h3>
         <div id="map" className="map"></div>
+        <div id="form" className="form">
         <form>
           <div className="form-check">
             <label>
@@ -588,13 +612,34 @@ class Map extends React.Component {
               By Age
             </label>
           </div>
+          { 1 ? null :
           <div onChange={this.handleOptionChange.bind(this)} className="form-check">
             <label>
               <input type="radio" name="ethnicity" value="ethnicity" checked={this.state.selectedOption === "ethnicity"} onChange={this.handleOptionChange.bind(this)} className="form-check-input"/>
               By Ethnicity
             </label>
           </div>
+          }
         </form>
+        </div>
+        <div id="legend" className="legend">
+          <div id="first" className="legend_item">
+            <div id="legend-first" className="legend-text">{firstLegendText}</div>
+            <div className="icon"><span className="legend-icon-county"></span></div>
+          </div>
+          { (selectedOption == 'all') ? null:
+          <div>
+          <div id="second" className="legend_item">
+            <div id="legend-second" className="legend-text" >{secondLegendText}</div>
+            <div className="icon" ><span  className="legend-icon-state"></span></div>
+          </div>
+          <div id="third" className="legend_item">
+            <div id="legend-third" className="legend-text" >{thirdLegendText}</div>
+            <div className="icon" ><span  className="legend-icon-federal"></span></div>
+          </div>
+          </div>
+          }
+        </div>
       </div>
     );
   }
