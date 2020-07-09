@@ -4,8 +4,21 @@ import './texas-map-app.css';
 import Tabletop from 'tabletop';
 import MarkerClusterer from '@google/markerclustererplus';
 
-// Custom clustericon class
+
 //
+// Cluster Class Methods
+//
+// getCenter()
+//
+// getMarkers()
+//
+// getMap()
+//
+// getMarkerClusterer()
+//
+// MarkerClusterer Class Methods
+//
+// zoomOnClick
 //
 
 class Map extends React.Component {
@@ -55,6 +68,60 @@ class Map extends React.Component {
 
     // Return a promise for the Google Maps API
     return this.googleMapsPromise;
+  }
+
+  onMarkerClick(marker){
+    this.getGoogleMaps().then((google) => {
+      console.log('CLICK', marker, marker.info);
+    });
+  }
+
+  onClusterClick(cluster){
+    this.getGoogleMaps().then((google) => {
+      console.log('CLICK', cluster.getCenter(), cluster.getMarkers());
+      const markers = cluster.getMarkers();
+      var facilities = {}; 
+      var contentBodyString = '';
+      markers.forEach(marker => {
+        console.log('Current Marker', marker);
+        if (!(marker.info.facility in facilities)) {
+          facilities[marker.info.facility] = marker.info; 
+        }
+        contentBodyString = contentBodyString + 
+          '<b>' + marker.info.name + '</b>, died on ' + marker.info.dod + ' at the age of ' + marker.info.age + '.</br>';
+      });
+      //var contentHeaderString = '<h1 id="firstHeading" class="firstHeading">';
+      var contentHeaderString = '<div id="content">'+
+                            '<div id="siteNotice">'+
+                            '</div>'+
+                            '<h1 id="firstHeading" class="firstHeading">'+
+                            'Facilities:'+
+                            '</h1>';
+      Object.entries(facilities).forEach(facility => {
+        console.log('Current Facility', facility); 
+        var info = facility[1];
+        console.log(info); 
+        contentHeaderString = contentHeaderString + 
+          '<b>' + info.facility +'</b>, ' 
+          + info.facilityType + ', ' 
+          + info.city + ', ' 
+          + info.county + ' County, TX</br>';
+      });
+      //contentHeaderString = contentHeaderString + '</h1>' 
+      var contentString = contentHeaderString + 
+        '<div id="bodyContent"><p>' + 
+        '<h1 id="bodyHeading" class="bodyHeading">' +
+        'Deaths:' +
+        '</h1>' +
+        contentBodyString + 
+        '</p></div></div>';
+      console.log('Content', contentString); 
+      var infowindow = new google.maps.InfoWindow({
+        position: cluster.getCenter(),
+        content: contentString,
+      });
+      infowindow.open(cluster.getMap());
+    });
   }
 
   componentWillMount() {
@@ -320,17 +387,19 @@ class Map extends React.Component {
       map.mapTypes.set('tji_map', styledMapType);
       map.setMapTypeId('tji_map');
 
-      const county_style = {
+      const first_style = {
         gridSize: 30,
+        zoomOnClick: false,
+        minimumClusterSize: 1,
         styles: [
           {
-            width: 30,
-            height: 30,
+            width: 20,
+            height: 20,
             className: 'custom-clustericon-county'
           },
           {
-            width: 35,
-            height: 35,
+            width: 30,
+            height: 30,
             className: 'custom-clustericon-county'
           },
           {
@@ -342,17 +411,19 @@ class Map extends React.Component {
         clusterClass: 'custom-clustericon'
       };
 
-      const state_style = {
+      const second_style = {
         gridSize: 30,
+        zoomOnClick: false,
+        minimumClusterSize: 1,
         styles: [
           {
-            width: 30,
-            height: 30,
+            width: 20,
+            height: 20,
             className: 'custom-clustericon-state'
           },
           {
-            width: 35,
-            height: 35,
+            width: 30,
+            height: 30,
             className: 'custom-clustericon-state'
           },
           {
@@ -364,17 +435,19 @@ class Map extends React.Component {
         clusterClass: 'custom-clustericon'
       };
 
-      const federal_style = {
+      const third_style = {
         gridSize: 30,
+        zoomOnClick: false,
+        minimumClusterSize: 1,
         styles: [
           {
-            width: 30,
-            height: 30,
+            width: 20,
+            height: 20,
             className: 'custom-clustericon-federal'
           },
           {
-            width: 35,
-            height: 35,
+            width: 30,
+            height: 30,
             className: 'custom-clustericon-federal'
           },
           {
@@ -386,9 +459,12 @@ class Map extends React.Component {
         clusterClass: 'custom-clustericon'
       };
 
-      var firstClusterer = new MarkerClusterer(map, [], county_style);
-      var secondClusterer = new MarkerClusterer(map, [], state_style);      
-      var thirdClusterer = new MarkerClusterer(map, [], federal_style);
+      var firstClusterer = new MarkerClusterer(map, [], first_style);
+      google.maps.event.addListener(firstClusterer, 'click', this.onClusterClick.bind(this));
+      var secondClusterer = new MarkerClusterer(map, [], second_style);      
+      google.maps.event.addListener(secondClusterer, 'click', this.onClusterClick.bind(this));
+      var thirdClusterer = new MarkerClusterer(map, [], third_style);
+      google.maps.event.addListener(thirdClusterer, 'click', this.onClusterClick.bind(this));
 
       this.setState({ map: map,
                       firstClusterer: firstClusterer, 
@@ -500,6 +576,8 @@ class Map extends React.Component {
             county: row.County
           }
         });
+        google.maps.event.clearListeners(marker, 'click');
+        google.maps.event.addListener(marker, 'click', this.onMarkerClick.bind(this));
 
         if(selectedOption === "all") {
           firstMarkers.push(marker); 
@@ -541,26 +619,6 @@ class Map extends React.Component {
                       selectUpdate: false
                     });
 
-//      map.addListener(countyClusterer, 'clusterclick', function(cluster) {
-//        const markers = cluster.getMarkers();
-//        var contentString = '<div id="content">'+
-//                              '<div id="siteNotice">'+
-//                              '</div>'+
-//                              '<h1 id="firstHeading" class="firstHeading">' +
-//                              markers[0].info.facility +
-//                              '</h1>'+
-//                              markers[0].info.facilityType + ', ' + markers[0].info.city + ', ' + markers[0].info.county + ' County, TX' +
-//                              '<div id="bodyContent"><p>';
-//        for(const marker in markers) {
-//          contentString = contentString + 
-//            '<b>' + markers[0].info.name + '</b>, died on ' + markers[0].info.dod + ' at the age of ' + markers[0].info.age + '</br>';
-//        }
-//        contentString = contentString + '</p></div></div>';
-//        var infowindow = new google.maps.InfoWindow({
-//          content: contentString,
-//        });
-//        infowindow.open(map);
-//      });
     });
   }
 

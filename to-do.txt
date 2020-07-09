@@ -1,0 +1,10 @@
+To-Do List:
+
+1.  Code Styling
+2.  Key storage
+3.  Map-legend formatting
+4.  Pages hierarchy
+5.  Page content, description
+6.  Info windows for map markers/clusters (Facilities, county names, individuals (name, age))
+7.  Slider bar to track changes over time
+8.  County lines, vary on zoom-level.
